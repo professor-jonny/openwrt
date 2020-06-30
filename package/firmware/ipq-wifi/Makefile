@@ -42,7 +42,8 @@ ALLWIFIBOARDS:= \
 	linksys_mr8300-v0 \
 	luma_wrtq-329acn \
 	mobipromo_cm520-79f \
-	qxwlan_e2600ac
+	qxwlan_e2600ac \
+	wallystech_dr40x9
 
 ALLWIFIPACKAGES:=$(foreach BOARD,$(ALLWIFIBOARDS),ipq-wifi-$(BOARD))
 
@@ -121,5 +122,6 @@ $(eval $(call generate-ipq-wifi-package,linksys_mr8300-v0,Linksys MR8300))
 $(eval $(call generate-ipq-wifi-package,luma_wrtq-329acn,Luma WRTQ-329ACN))
 $(eval $(call generate-ipq-wifi-package,mobipromo_cm520-79f,MobiPromo CM520-79F))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac,Qxwlan E2600AC))
+$(eval $(call generate-ipq-wifi-package,wallystech_dr40x9,Wallystech DR40X9))
 
 $(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))

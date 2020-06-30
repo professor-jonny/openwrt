@@ -722,6 +722,19 @@ define Device/unielec_u4019-32m
 endef
 TARGET_DEVICES += unielec_u4019-32m
 
+define Device/wallystech_dr40x9
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Wallystech
+	DEVICE_MODEL := DR40X9
+	SOC := qcom-ipq40x9
+	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ipq-wifi-wallystech_dr40x9
+endef
+TARGET_DEVICES += wallystech_dr40x9
+
 define Device/zyxel_nbg6617
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := ZyXEL
