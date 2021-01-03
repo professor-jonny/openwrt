@@ -90,19 +90,22 @@ define KernelPackage/fs-cifs
   KCONFIG:= \
 	CONFIG_CIFS \
 	CONFIG_CIFS_DFS_UPCALL=n \
-	CONFIG_CIFS_UPCALL=n \
-	CONFIG_CIFS_SMB311=n
+	CONFIG_CIFS_UPCALL=n
   FILES:=$(LINUX_DIR)/fs/cifs/cifs.ko
   AUTOLOAD:=$(call AutoLoad,30,cifs)
   $(call AddDepends/nls)
   DEPENDS+= \
-    +kmod-crypto-arc4 \
-    +kmod-crypto-hmac \
-    +kmod-crypto-md5 \
     +kmod-crypto-md4 \
-    +kmod-crypto-des \
+    +kmod-crypto-md5 \
+    +kmod-crypto-sha256 \
+    +kmod-crypto-sha512 \
+    +kmod-crypto-cmac \
+    +kmod-crypto-hmac \
+    +kmod-crypto-arc4 \
+    +kmod-crypto-aead \
+    +kmod-crypto-ccm \
     +kmod-crypto-ecb \
-    +kmod-crypto-sha256
+    +kmod-crypto-des
 endef
 
 define KernelPackage/fs-cifs/description
@@ -204,7 +207,7 @@ $(eval $(call KernelPackage,fs-ext4))
 define KernelPackage/fs-f2fs
   SUBMENU:=$(FS_MENU)
   TITLE:=F2FS filesystem support
-  DEPENDS:= +kmod-crypto-hash +kmod-crypto-crc32 +!LINUX_4_19:kmod-nls-base
+  DEPENDS:= +kmod-crypto-hash +kmod-crypto-crc32 +kmod-nls-base
   KCONFIG:=CONFIG_F2FS_FS
   FILES:=$(LINUX_DIR)/fs/f2fs/f2fs.ko
   AUTOLOAD:=$(call AutoLoad,30,f2fs,1)
