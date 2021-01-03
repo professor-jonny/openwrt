@@ -7,39 +7,13 @@ include ./common-tp-link.mk
 DEFAULT_SOC := mt7621
 
 KERNEL_DTB += -d21
-DEVICE_VARS += UIMAGE_MAGIC ELECOM_HWNAME LINKSYS_HWNAME
-
-# The OEM webinterface expects an kernel with initramfs which has the uImage
-# header field ih_name.
-# We don't want to set the header name field for the kernel include in the
-# sysupgrade image as well, as this image shouldn't be accepted by the OEM
-# webinterface. It will soft-brick the board.
-define Build/custom-initramfs-uimage
-	mkimage -A $(LINUX_KARCH) \
-		-O linux -T kernel \
-		-C lzma -a $(KERNEL_LOADADDR) $(if $(UIMAGE_MAGIC),-M $(UIMAGE_MAGIC),) \
-		-e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
-		-n '$(1)' -d $@ $@.new
-	mv $@.new $@
-endef
+DEVICE_VARS += ELECOM_HWNAME LINKSYS_HWNAME
 
 define Build/elecom-wrc-gs-factory
 	$(eval product=$(word 1,$(1)))
 	$(eval version=$(word 2,$(1)))
-	( $(STAGING_DIR_HOST)/bin/mkhash md5 $@ | tr -d '\n' ) >> $@
-	( \
-		echo -n "ELECOM $(product) v$(version)" | \
-			dd bs=32 count=1 conv=sync; \
-		dd if=$@; \
-	) > $@.new
-	mv $@.new $@
-	echo -n "MT7621_ELECOM_$(product)" >> $@
-endef
-
-define Build/elecom-wrc-factory
-	$(eval product=$(word 1,$(1)))
-	$(eval version=$(word 2,$(1)))
-	$(STAGING_DIR_HOST)/bin/mkhash md5 $@ >> $@
+	$(eval hash_opt=$(word 3,$(1)))
+	$(STAGING_DIR_HOST)/bin/mkhash md5 $(hash_opt) $@ >> $@
 	( \
 		echo -n "ELECOM $(product) v$(version)" | \
 			dd bs=32 count=1 conv=sync; \
@@ -202,6 +176,17 @@ define Device/asus_rt-ac85p
 endef
 TARGET_DEVICES += asus_rt-ac85p
 
+define Device/asus_rt-n56u-b1
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-N56U
+  DEVICE_VARIANT := B1
+  IMAGE_SIZE := 16064k
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
+	kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += asus_rt-n56u-b1
+
 define Device/buffalo_wsr-1166dhp
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -250,6 +235,17 @@ define Device/dlink_dir-8xx-a1
 	check-size
 endef
 
+define Device/dlink_dir-8xx-r1
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := D-Link
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  KERNEL_INITRAMFS := $$(KERNEL) 
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs |\
+	pad-rootfs | append-metadata | check-size
+endef
+
 define Device/dlink_dir-xx60-a1
   $(Device/dsa-migration)
   BLOCKSIZE := 128k
@@ -273,6 +269,13 @@ define Device/dlink_dir-1960-a1
   DEVICE_VARIANT := A1
 endef
 TARGET_DEVICES += dlink_dir-1960-a1
+
+define Device/dlink_dir-2640-a1
+  $(Device/dlink_dir-xx60-a1)
+  DEVICE_MODEL := DIR-2640
+  DEVICE_VARIANT := A1
+endef
+TARGET_DEVICES += dlink_dir-2640-a1
 
 define Device/dlink_dir-2660-a1
   $(Device/dlink_dir-xx60-a1)
@@ -319,6 +322,17 @@ define Device/dlink_dir-882-a1
   DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += dlink_dir-882-a1
+
+define Device/dlink_dir-882-r1
+  $(Device/dlink_dir-8xx-r1)
+  DEVICE_MODEL := DIR-882
+  DEVICE_VARIANT := R1
+  DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport
+  IMAGE/factory.bin := append-kernel | append-rootfs | check-size | \
+	  sign-dlink-ru 57c5375741c30ca9ebcb36713db4ba51 \
+	  ab0dff19af8842cdb70a86b4b68d23f7
+endef
+TARGET_DEVICES += dlink_dir-882-r1
 
 define Device/d-team_newifi-d2
   $(Device/dsa-migration)
@@ -396,7 +410,7 @@ define Device/elecom_wrc-1167ghbk2-s
   DEVICE_MODEL := WRC-1167GHBK2-S
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	elecom-wrc-factory WRC-1167GHBK2-S 0.00
+	elecom-wrc-gs-factory WRC-1167GHBK2-S 0.00
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += elecom_wrc-1167ghbk2-s
@@ -407,9 +421,26 @@ define Device/elecom_wrc-gs
   DEVICE_VENDOR := ELECOM
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	elecom-wrc-gs-factory $$$$(ELECOM_HWNAME) 0.00
+	elecom-wrc-gs-factory $$$$(ELECOM_HWNAME) 0.00 -N | \
+	append-string MT7621_ELECOM_$$$$(ELECOM_HWNAME)
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
 endef
+
+define Device/elecom_wrc-1167gs2-b
+  $(Device/elecom_wrc-gs)
+  IMAGE_SIZE := 11264k
+  DEVICE_MODEL := WRC-1167GS2-B
+  ELECOM_HWNAME := WRC-1167GS2
+endef
+TARGET_DEVICES += elecom_wrc-1167gs2-b
+
+define Device/elecom_wrc-1167gst2
+  $(Device/elecom_wrc-gs)
+  IMAGE_SIZE := 24576k
+  DEVICE_MODEL := WRC-1167GST2
+  ELECOM_HWNAME := WRC-1167GST2
+endef
+TARGET_DEVICES += elecom_wrc-1167gst2
 
 define Device/elecom_wrc-1750gs
   $(Device/elecom_wrc-gs)
@@ -471,6 +502,15 @@ define Device/gehua_ghl-r-001
 endef
 TARGET_DEVICES += gehua_ghl-r-001
 
+define Device/glinet_gl-mt1300
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-MT1300
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3
+endef
+TARGET_DEVICES += glinet_gl-mt1300
+
 define Device/gnubee_gb-pc1
   $(Device/dsa-migration)
   DEVICE_VENDOR := GnuBee
@@ -531,32 +571,35 @@ define Device/iodata_nand
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
+# The OEM webinterface expects an kernel with initramfs which has the uImage
+# header field ih_name.
+# We don't want to set the header name field for the kernel include in the
+# sysupgrade image as well, as this image shouldn't be accepted by the OEM
+# webinterface. It will soft-brick the board.
+
 define Device/iodata_wn-ax1167gr2
   $(Device/iodata_nand)
-  UIMAGE_MAGIC := 0x434f4d42
   DEVICE_MODEL := WN-AX1167GR2
   KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
-	custom-initramfs-uimage 3.10(XBC.1)b10 | iodata-mstc-header
+	uImage lzma -M 0x434f4d42 -n '3.10(XBC.1)b10' | iodata-mstc-header
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr2
 
 define Device/iodata_wn-ax2033gr
   $(Device/iodata_nand)
-  UIMAGE_MAGIC := 0x434f4d42
   DEVICE_MODEL := WN-AX2033GR
   KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
-	custom-initramfs-uimage 3.10(VST.1)C10 | iodata-mstc-header
+	uImage lzma -M 0x434f4d42 -n '3.10(VST.1)C10' | iodata-mstc-header
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += iodata_wn-ax2033gr
 
 define Device/iodata_wn-dx1167r
   $(Device/iodata_nand)
-  UIMAGE_MAGIC := 0x434f4d43
   DEVICE_MODEL := WN-DX1167R
   KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
-	custom-initramfs-uimage 3.10(XIK.1)b10 | iodata-mstc-header
+	uImage lzma -M 0x434f4d43 -n '3.10(XIK.1)b10' | iodata-mstc-header
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += iodata_wn-dx1167r
@@ -708,8 +751,8 @@ define Device/MikroTik
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16128k
   DEVICE_PACKAGES := kmod-usb3
-  LOADER_TYPE := elf
-  KERNEL := $(KERNEL_DTB) | loader-kernel
+  KERNEL_NAME := vmlinuz
+  KERNEL := kernel-bin | append-dtb-elf
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | \
 	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata | \
 	check-size
@@ -762,7 +805,7 @@ define Device/mtc_wr1201
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := MTC
   DEVICE_MODEL := Wireless Router WR1201
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage WR1201_8_128
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma -n 'WR1201_8_128'
   DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport
 endef
@@ -1015,6 +1058,16 @@ define Device/totolink_a7000r
 endef
 TARGET_DEVICES += totolink_a7000r
 
+define Device/totolink_x5000r
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 16064k
+  UIMAGE_NAME := C8343R-9999
+  DEVICE_VENDOR := TOTOLINK
+  DEVICE_MODEL := X5000R
+  DEVICE_PACKAGES := kmod-mt7915e
+endef
+TARGET_DEVICES += totolink_x5000r
+
 define Device/tplink_re350-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
@@ -1088,6 +1141,7 @@ TARGET_DEVICES += ubnt_unifi-nanohd
 
 define Device/unielec_u7621-06-16m
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
@@ -1099,6 +1153,7 @@ TARGET_DEVICES += unielec_u7621-06-16m
 
 define Device/unielec_u7621-06-64m
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 65216k
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
@@ -1172,13 +1227,7 @@ define Device/xiaomi-ac2100
 	uboot-envtools
 endef
 
-define Device/xiaomi_mi-router-ac2100
-  $(Device/xiaomi-ac2100)
-  DEVICE_MODEL := Mi Router AC2100
-endef
-TARGET_DEVICES += xiaomi_mi-router-ac2100
-
-define Device/xiaomi_mir3g
+define Device/xiaomi_mi-router-3g
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
@@ -1192,28 +1241,25 @@ define Device/xiaomi_mir3g
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 3G
-  SUPPORTED_DEVICES += R3G
-  SUPPORTED_DEVICES += mir3g
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport uboot-envtools
+  SUPPORTED_DEVICES += R3G mir3g xiaomi,mir3g
 endef
-TARGET_DEVICES += xiaomi_mir3g
+TARGET_DEVICES += xiaomi_mi-router-3g
 
-define Device/xiaomi_mir3g-v2
+define Device/xiaomi_mi-router-3g-v2
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 14848k
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 3G
   DEVICE_VARIANT := v2
-  DEVICE_ALT0_VENDOR := Xiaomi
-  DEVICE_ALT0_MODEL := Mi Router 4A
-  DEVICE_ALT0_VARIANT := Gigabit Edition
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
+  SUPPORTED_DEVICES += xiaomi,mir3g-v2
 endef
-TARGET_DEVICES += xiaomi_mir3g-v2
+TARGET_DEVICES += xiaomi_mi-router-3g-v2
 
-define Device/xiaomi_mir3p
+define Device/xiaomi_mi-router-3-pro
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
@@ -1229,8 +1275,26 @@ define Device/xiaomi_mir3p
 	check-size
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
 	kmod-usb-ledtrig-usbport uboot-envtools
+  SUPPORTED_DEVICES += xiaomi,mir3p
 endef
-TARGET_DEVICES += xiaomi_mir3p
+TARGET_DEVICES += xiaomi_mi-router-3-pro
+
+define Device/xiaomi_mi-router-4a-gigabit
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 14848k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 4A
+  DEVICE_VARIANT := Gigabit Edition
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
+endef
+TARGET_DEVICES += xiaomi_mi-router-4a-gigabit
+
+define Device/xiaomi_mi-router-ac2100
+  $(Device/xiaomi-ac2100)
+  DEVICE_MODEL := Mi Router AC2100
+endef
+TARGET_DEVICES += xiaomi_mi-router-ac2100
 
 define Device/xiaomi_redmi-router-ac2100
   $(Device/xiaomi-ac2100)
