@@ -44,6 +44,8 @@ ALLWIFIBOARDS:= \
 	linksys_mr8300-v0 \
 	luma_wrtq-329acn \
 	mobipromo_cm520-79f \
+	qxwlan_e2600ac \
+	wallystech_dr40x9 \
 	nec_wg2600hp3 \
 	plasmacloud_pa1200 \
 	plasmacloud_pa2200 \
@@ -131,5 +133,6 @@ $(eval $(call generate-ipq-wifi-package,nec_wg2600hp3,NEC Platforms WG2600HP3))
 $(eval $(call generate-ipq-wifi-package,plasmacloud_pa1200,Plasma Cloud PA1200))
 $(eval $(call generate-ipq-wifi-package,plasmacloud_pa2200,Plasma Cloud PA2200))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac,Qxwlan E2600AC))
+$(eval $(call generate-ipq-wifi-package,wallystech_dr40x9,Wallystech DR40X9))
 
 $(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))
