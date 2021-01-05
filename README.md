@@ -85,3 +85,29 @@ For a list of supported devices see the [OpenWrt Hardware Database](https://open
 ## License
 
 OpenWrt is licensed under GPL-2.0
+=============================================
+
+This Fork is for Wallys devices supporting.
+Currently, Following boards are supported (based on Openwrt 19)
+DR531
+DR342
+DR344
+DR4029/DR4028 Nor+Nand flash.
+
+How to update openwrt firmware  from factory firmware
+
+1. download the firmware from https://github.com/professor-jonny/images/blob/main/wallys2openwrt.img
+Run the following command on uboot mode
+2. tftpboot 0x84000000 wallys2openwrt.img
+3. imgaddr=0x84000000 && source $imgaddr:script
+4. reset
+
+
+after above steps , we can run the following command to update openwrt firmware
+you can find the latest prebuilt firmware on my repo here https://github.com/professor-jonny/images/blob/main/generic.rar
+
+1. tftpboot 0x84000000 openwrt-ipq40xx-generic-Wallys_DR4029-squashfs-nand-factory.ubi
+2. nand device 0
+3. nand erase 0x0 0x8000000
+4. nand write 0x84000000 0x0 0x4000000
+5. reset
