@@ -1,10 +1,6 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
-DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
-DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
-
 define Device/Default
 	PROFILES := Default
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
@@ -12,7 +8,6 @@ define Device/Default
 	KERNEL_PREFIX := $$(IMAGE_PREFIX)
 	KERNEL_LOADADDR := 0x80208000
 	DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
-	SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin = sysupgrade-tar | append-metadata
 	IMAGE/sysupgrade.bin/squashfs :=

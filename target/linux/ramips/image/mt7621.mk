@@ -240,7 +240,7 @@ define Device/dlink_dir-8xx-r1
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := D-Link
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
-  KERNEL_INITRAMFS := $$(KERNEL) 
+  KERNEL_INITRAMFS := $$(KERNEL)
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs |\
 	pad-rootfs | append-metadata | check-size
@@ -465,6 +465,20 @@ define Device/elecom_wrc-1900gst
   ELECOM_HWNAME := WRC-1900GST
 endef
 TARGET_DEVICES += elecom_wrc-1900gst
+
+define Device/elecom_wrc-2533ghbk-i
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WRC-2533GHBK-I
+  IMAGE_SIZE := 9856k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
+	elx-header 0107002d 8844A2D168B45A2D | \
+	elecom-product-header WRC-2533GHBK-I
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+endef
+TARGET_DEVICES += elecom_wrc-2533ghbk-i
 
 define Device/elecom_wrc-2533gst
   $(Device/elecom_wrc-gs)
@@ -1130,6 +1144,16 @@ define Device/ubnt_edgerouter-x-sfp
 endef
 TARGET_DEVICES += ubnt_edgerouter-x-sfp
 
+define Device/ubnt_unifi-6-lite
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi 6 Lite
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7915e
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE_SIZE := 15424k
+endef
+TARGET_DEVICES += ubnt_unifi-6-lite
+
 define Device/ubnt_unifi-nanohd
   $(Device/dsa-migration)
   DEVICE_VENDOR := Ubiquiti
@@ -1138,6 +1162,17 @@ define Device/ubnt_unifi-nanohd
   IMAGE_SIZE := 15552k
 endef
 TARGET_DEVICES += ubnt_unifi-nanohd
+
+define Device/unielec_u7621-01-16m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := UniElec
+  DEVICE_MODEL := U7621-01
+  DEVICE_VARIANT := 16M
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3
+endef
+TARGET_DEVICES += unielec_u7621-01-16m
 
 define Device/unielec_u7621-06-16m
   $(Device/dsa-migration)
@@ -1210,39 +1245,27 @@ define Device/winstars_ws-wn583a6
 endef
 TARGET_DEVICES += winstars_ws-wn583a6
 
-define Device/xiaomi-ac2100
+define Device/xiaomi_nand_separate
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_PACKAGES := uboot-envtools
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
-  IMAGE_SIZE := 120320k
   UBINIZE_OPTS := -E 5
   IMAGES += kernel1.bin rootfs0.bin
   IMAGE/kernel1.bin := append-kernel
   IMAGE/rootfs0.bin := append-ubi | check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_VENDOR := Xiaomi
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware \
-	uboot-envtools
 endef
 
 define Device/xiaomi_mi-router-3g
-  $(Device/dsa-migration)
-  $(Device/uimage-lzma-loader)
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  KERNEL_SIZE := 4096k
-  IMAGE_SIZE := 124416k
-  UBINIZE_OPTS := -E 5
-  IMAGES += kernel1.bin rootfs0.bin
-  IMAGE/kernel1.bin := append-kernel
-  IMAGE/rootfs0.bin := append-ubi | check-size
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_VENDOR := Xiaomi
+  $(Device/xiaomi_nand_separate)
   DEVICE_MODEL := Mi Router 3G
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport uboot-envtools
+  IMAGE_SIZE := 124416k
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt76x2 kmod-usb3 \
+	kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += R3G mir3g xiaomi,mir3g
 endef
 TARGET_DEVICES += xiaomi_mi-router-3g
@@ -1279,6 +1302,14 @@ define Device/xiaomi_mi-router-3-pro
 endef
 TARGET_DEVICES += xiaomi_mi-router-3-pro
 
+define Device/xiaomi_mi-router-4
+  $(Device/xiaomi_nand_separate)
+  DEVICE_MODEL := Mi Router 4
+  IMAGE_SIZE := 124416k
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt76x2
+endef
+TARGET_DEVICES += xiaomi_mi-router-4
+
 define Device/xiaomi_mi-router-4a-gigabit
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -1291,14 +1322,18 @@ endef
 TARGET_DEVICES += xiaomi_mi-router-4a-gigabit
 
 define Device/xiaomi_mi-router-ac2100
-  $(Device/xiaomi-ac2100)
+  $(Device/xiaomi_nand_separate)
   DEVICE_MODEL := Mi Router AC2100
+  IMAGE_SIZE := 120320k
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += xiaomi_mi-router-ac2100
 
 define Device/xiaomi_redmi-router-ac2100
-  $(Device/xiaomi-ac2100)
+  $(Device/xiaomi_nand_separate)
   DEVICE_MODEL := Redmi Router AC2100
+  IMAGE_SIZE := 120320k
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += xiaomi_redmi-router-ac2100
 
@@ -1343,6 +1378,7 @@ TARGET_DEVICES += youku_yk-l2
 
 define Device/zbtlink_zbt-we1326
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE1326
@@ -1353,6 +1389,7 @@ TARGET_DEVICES += zbtlink_zbt-we1326
 
 define Device/zbtlink_zbt-we3526
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE3526
@@ -1363,6 +1400,7 @@ TARGET_DEVICES += zbtlink_zbt-we3526
 
 define Device/zbtlink_zbt-wg2626
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WG2626
