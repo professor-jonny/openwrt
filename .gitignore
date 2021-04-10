@@ -28,3 +28,4 @@ git-src
 .project
 .cproject
 .ccache
+.vscode

@@ -1,10 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2013-2016 OpenWrt.org
 # Copyright (C) 2016 Yousong Zhou
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 define Device/sun50i
   SUNXI_DTS_DIR := allwinner/
@@ -69,6 +66,7 @@ TARGET_DEVICES += olimex_a64-olinuxino-emmc
 define Device/pine64_pine64-plus
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := Pine64+
+  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bs-firmware
   $(Device/sun50i-a64)
 endef
 TARGET_DEVICES += pine64_pine64-plus
@@ -76,6 +74,7 @@ TARGET_DEVICES += pine64_pine64-plus
 define Device/pine64_sopine-baseboard
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := SoPine
+  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bs-firmware
   $(Device/sun50i-a64)
 endef
 TARGET_DEVICES += pine64_sopine-baseboard
