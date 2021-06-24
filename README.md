@@ -104,10 +104,13 @@ Run the following command on uboot mode
 
 
 after above steps , we can run the following command to update openwrt firmware
-you can find the latest prebuilt firmware on my repo here https://github.com/professor-jonny/images/blob/main/generic.rar
+you can find the latest prebuilt firmware on my repo here based on the 21.01 https://github.com/professor-jonny/images/raw/main/generic%2025_6_21.rar
+
 
 1. tftpboot 0x84000000 openwrt-ipq40xx-generic-Wallys_DR4029-squashfs-nand-factory.ubi
 2. nand device 0
 3. nand erase 0x0 0x8000000
 4. nand write 0x84000000 0x0 0x4000000
 5. reset
+
+note that the dr40x9 device came factory with differing nand and ram sizes and I cant gurantee compatibility with each device as my board is 128mb but it works for me.
